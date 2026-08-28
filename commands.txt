@@ -1,0 +1,226 @@
+📦 Creating & Managing Projects
+bash
+Copy
+cargo new my_app            # new binary project
+cargo new my_lib --lib      # new library project
+cargo new my_app --bin      # new binary (explicit)
+cargo new --vcs git my_app  # init git alongside
+
+🔨 Build, Run, Check
+bash
+Copy
+cargo build                 # build project (debug)
+cargo build --release       # optimized build for production
+cargo run                   # compile + run (debug)
+cargo run --release         # compile + run (optimized)
+cargo run -- arg1 arg2      # pass args to your binary
+cargo check                 # type-check without producing binary (FAST)
+cargo clippy                # linter — catch bad patterns (run this often)
+cargo fix                   # auto-fix warnings clippy/rustc can fix
+cargo fix --allow-dirty     # auto-fix even with uncommitted changes
+cargo clean                 # remove target/ folder (free disk space)
+🧪 Testing & Docs
+bash
+Copy
+cargo test                          # run all tests
+cargo test test_name                # run tests matching name
+cargo test -- --nocapture           # show println! output during tests
+cargo bench                         # run benchmarks (unstable)
+cargo doc --open                    # generate & open HTML docs
+cargo doc --no-deps --open          # docs for your crate only (faster)
+📚 Dependencies — Cargo.toml
+toml
+Copy
+[package]
+name = "my_app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+reqwest = "0.12"
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+bash
+Copy
+cargo add serde --features derive     # add dependency from CLI
+cargo add tokio --features full       # add with features
+cargo add pretty_assertions --dev     # add dev-dependency
+cargo remove old_crate                # remove dependency
+cargo update                          # update Cargo.lock to latest compatible
+cargo update serde                    # update one crate
+cargo tree                            # show dependency tree
+cargo tree -d                         # show duplicate dependencies
+cargo outdated                        # check for outdated crates (needs cargo-outdated)
+✨ Rust Style Essentials
+Formatting
+bash
+Copy
+cargo fmt                 # format all files in-place
+cargo fmt -- --check      # check if formatted (CI / pre-commit)
+cargo fmt -- --files src/main.rs   # format specific file
+Linting
+bash
+Copy
+cargo clippy                           # run clippy (warnings)
+cargo clippy -- -W clippy::pedantic    # stricter lints
+cargo clippy -- -D warnings            # treat warnings as errors
+cargo clippy --fix                     # auto-fix clippy suggestions
+🦀 Code Style Quick Reference
+rust
+Copy
+// snake_case for functions and variables
+fn calculate_total(items: &[Item]) -> u32 { ... }
+let user_count = 0;
+
+// PascalCase for types, traits, enums
+struct UserAccount { ... }
+enum ConnectionState { ... }
+trait Repository { ... }
+
+// UPPER_SNAKE for constants
+const MAX_RETRIES: u32 = 5;
+
+// modules: snake_case files
+// file: src/user_service.rs  →  mod user_service;
+
+// Prefer &str for args, String for owned
+fn greet(name: &str) -> String {
+    format!("Hello, {name}")
+}
+
+// Use ? for error propagation, not match-everything
+fn read_file(path: &str) -> Result<String, io::Error> {
+    let content = std::fs::read_to_string(path)?;
+    Ok(content)
+}
+
+// Prefer iterators over explicit loops
+let sum: u32 = (1..=10).filter(|x| x % 2 == 0).sum();
+
+// Use if let / let else for simple patterns
+let Some(config) = raw_config else {
+    return;
+};
+
+// Explicit return types, avoid implicit type inference for public API
+pub fn get_count(&self) -> usize {
+    self.items.len()
+}
+
+// Derive what you need, don't derive everything
+#[derive(Debug, Clone)]
+struct User {
+    id: u32,
+    name: String,
+}
+
+// Use #[must_use] on important return types
+#[must_use]
+pub fn calculate_score(points: u32) -> u32 {
+    points * 10
+}
+📁 Project Structure
+my_app/
+Copy
+my_app/
+Cargo.toml
+Cargo.lock
+.gitignore              # /target, Cargo.lock (if lib)
+src/
+main.rs             # binary entry point
+lib.rs              # library root (if --lib)
+config.rs           # modules as files
+models/
+mod.rs          # module declaration
+user.rs
+tests/                  # integration tests
+integration_test.rs
+benches/                # benchmarks
+my_bench.rs
+examples/               # runnable examples
+simple.rs
+target/                 # build output (gitignored)
+⚙️ Workspace (Multi-Crate)
+toml
+Copy
+# Root Cargo.toml
+[workspace]
+members = [
+    "api",
+    "core",
+    "cli",
+]
+resolver = "2"
+bash
+Copy
+cargo build --workspace         # build all crates
+cargo test --workspace          # test all crates
+cargo run -p api                # run specific crate
+cargo build -p core             # build specific crate
+🔗 Git Hooks (Pre-commit: fmt + clippy)
+Create .git/hooks/pre-commit:
+
+bash
+Copy
+#!/bin/sh
+cargo fmt -- --check
+cargo clippy -- -D warnings
+powershell
+Copy
+# On Windows make it executable (Git Bash)
+chmod +x .git/hooks/pre-commit
+Or use cargo-husky crate:
+
+toml
+Copy
+[dev-dependencies]
+cargo-husky = { version = "1", features = ["precommit-hook", "run-cargo-fmt", "run-cargo-clippy"] }
+🚀 Release / Publish
+bash
+Copy
+cargo build --release                # optimized binary
+cargo install cargo-edit             # install cargo-add/remove (older Rust)
+cargo install cargo-bump             # version management
+cargo bump patch                     # 0.1.0 → 0.1.1
+cargo publish --dry-run              # test publish to crates.io
+cargo publish                        # publish to crates.io
+cargo install --path .               # install your binary locally
+🛠 Useful Cargo Subcommands (install separately)
+bash
+Copy
+cargo install cargo-watch       # auto-rebuild on file change
+cargo install cargo-edit        # cargo add/remove/upgrade
+cargo install cargo-outdated    # check for outdated deps
+cargo install cargo-audit       # scan for security vulnerabilities
+cargo install cargo-expand      # see macro expansion
+cargo install cargo-flamegraph  # profiling flamegraphs
+cargo install cargo-nextest     # faster test runner
+bash
+Copy
+# cargo-watch — game changer for development
+cargo watch -x run              # rebuild + run on every save
+cargo watch -x test             # rerun tests on every save
+cargo watch -x "run -- arg1"    # watch + run with args
+⚡ Daily Workflow (copy-paste loop)
+bash
+Copy
+# Write code → check → test → fmt → commit
+
+cargo check                   # fast type check
+cargo clippy -- -D warnings   # lint hard
+cargo test                    # run tests
+cargo fmt                     # format
+git add .
+git commit -m "feat: add user model"
+git push
+That covers everything from project creation to daily dev, testing, linting, formatting, release builds, and publishing.
