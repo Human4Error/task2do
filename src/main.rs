@@ -1,57 +1,87 @@
-// ═══ CHAPTER 02: GUESSING GAME ═══
-// Topics: control flow, loops, Result, Option, std::io
+use clap::{Parser, Subcommand};
+use std::fs;
+use std::path::PathBuf;
 
-use std::io;
-use rand::Rng;
+#[derive(Parser)]
+#[command(name = "mycli", version, about)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
 
-fn main() {
-    println!("🎯 Guess the number (1-100)!");
-    println!("Type 'quit' to exit.\n");
+#[derive(Subcommand)]
+enum Commands {
+    Greet {
+        #[arg(short, long, default_value = "World")]
+        name: String,
+    },
+    Calc {
+        #[command(subcommand)]
+        action: CalcAction,
+    },
+    Count {
+        #[arg(short, long)]
+        file: PathBuf,
+        #[arg(short = 'l', long)]
+        lines: bool,
+        #[arg(short = 'w', long)]
+        words: bool,
+        #[arg(short = 'c', long)]
+        chars: bool,
+    },
+}
 
-    let secret = rand::thread_rng().gen_range(1..=100);
-    let mut attempts = 0;
+#[derive(Subcommand)]
+enum CalcAction {
+    Add { a: f64, b: f64 },
+    Sub { a: f64, b: f64 },
+    Mul { a: f64, b: f64 },
+    Div { a: f64, b: f64 },
+}
 
-    loop {
-        attempts += 1;
-        print!("Attempt {}: > ", attempts);
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
 
-        // Flush stdout so the prompt appears before reading
-        io::stdout().flush().unwrap();
-
-        // Read input
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("failed to read line");
-
-        let input = input.trim();
-
-        // Quit
-        if input == "quit" {
-            println!("Bye! The number was {}.", secret);
-            break;
+    match &cli.command {
+        Commands::Greet { name } => {
+            println!("Hello, {}! ", name);
         }
+        Commands::Calc { action } => {
+            let result = match action {
+                CalcAction::Add { a, b } => a + b,
+                CalcAction::Div { a, b } => a - b,
+                CalcAction::Mul { a, b } => a * b,
+                CalcAction::Sub { a, b } => {
+                    if *b == 0.0 {
+                        println!("Error");
+                        return Ok(());
+                    }
+                    a/b
+                }
+            };
+            println!("Result; {}", result);
+        }
+        Commands::Count { file, lines, words, chars } => {
+            let content = fs::read_to_string(file)
+                .map_err(|e| anyhow::anyhow!("Cannot read file: {}", e))?;
 
-        // Parse
-        let guess: u32 = match input.parse() {
-            Ok(n) => n,
-            Err(_) => {
-                println!("⚠️  Please enter a number or 'quit'.");
-                continue;
+            // If no flags, do everything
+            let do_all = !(*lines || *words || *chars);
+
+            if *lines || do_all {
+                let count = content.lines().count();
+                println!("Lines: {}", count);
             }
-        };
-
-        // Compare
-        match guess.cmp(&secret) {
-            std::cmp::Ordering::Less    => println!("📈 Too small!\n"),
-            std::cmp::Ordering::Greater => println!("📉 Too big!\n"),
-            std::cmp::Ordering::Equal   => {
-                println!("🎉 You got it in {} attempts!", attempts);
-                break;
+            if *words || do_all {
+                let count = content.split_whitespace().count();
+                println!("Words: {}", count);
+            }
+            if *chars || do_all {
+                let count = content.chars().count();
+                println!("Chars: {}", count);
             }
         }
     }
-}
 
-// flush helper
-use std::io::Write;
+    Ok(())
+}

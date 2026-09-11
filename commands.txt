@@ -224,3 +224,12 @@ git add .
 git commit -m "feat: add user model"
 git push
 That covers everything from project creation to daily dev, testing, linting, formatting, release builds, and publishing.
+
+
+
+
+# Copy to a PATH directory (Linux/WSL)
+cp ./target/release/myapp ~/.cargo/bin/
+
+# Now run from anywhere
+myapp -n "Bob"
